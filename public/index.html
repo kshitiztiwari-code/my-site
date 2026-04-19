@@ -1444,35 +1444,31 @@ For broader engagements — product review, regulatory mapping, audit preparatio
     }
 
     // ── Proposal Widget ──
-    document.getElementById('fwProposalInput').addEventListener('keydown', e => { if (e.key === 'Enter') fwProposalSend(); });
-    document.getElementById('fwProposalSendBtn').addEventListener('click', fwProposalSend);
+    const fwQuestions = [
+        "What is your role? (e.g. Head of Compliance, Product Manager, Auditor, CRO…)",
+        "What's the challenge you're facing?",
+        "What have you tried so far?",
+        "What would success look like?",
+        "What's your outlook — any deadlines or urgency?",
+        "What's your email address? (We'll send the proposal here.)"
+    ];
+    const fwAnswerKeys = ['role', 'challenge', 'tried', 'success', 'outlook', 'email'];
+    let fwCurrentStep = 0;
+    const fwIntakeData = {};
 
     function fwUpdateProgress(step) {
         document.getElementById('fwStepLabel').textContent = step;
         document.getElementById('fwProgressFill').style.width = ((step / 6) * 100) + '%';
     }
 
-    async function fwProposalAutoStart() {
-        fwProposalHistory.push({ role: 'user', content: "I'd like to get a proposal." });
-        fwShowTyping('fwProposalMessages', 'fwProposalTyping');
-        try {
-            const res = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: fwProposalHistory })
-            });
-            const data = await res.json();
-            fwRemoveTyping('fwProposalTyping');
-            const reply = data.reply || "";
-            fwProposalHistory.push({ role: 'assistant', content: reply });
-            fwAddMsg('fwProposalMessages', reply, 'bot', 'Guardian Advisor');
-            if (data.intake_step != null) fwUpdateProgress(data.intake_step);
-            document.getElementById('fwProposalInput').focus();
-        } catch (err) {
-            fwRemoveTyping('fwProposalTyping');
-            fwAddMsg('fwProposalMessages', "Something went wrong. Please close and try again.", 'bot', 'Guardian Advisor');
-        }
+    function fwProposalAutoStart() {
+        fwAddMsg('fwProposalMessages', fwQuestions[0], 'bot', 'Guardian Advisor');
+        fwUpdateProgress(1);
+        document.getElementById('fwProposalInput').focus();
     }
+
+    document.getElementById('fwProposalInput').addEventListener('keydown', e => { if (e.key === 'Enter') fwProposalSend(); });
+    document.getElementById('fwProposalSendBtn').addEventListener('click', fwProposalSend);
 
     async function fwProposalSend() {
         if (fwProposalDone) return;
@@ -1481,41 +1477,31 @@ For broader engagements — product review, regulatory mapping, audit preparatio
         const text = input.value.trim();
         if (!text) return;
         input.value = '';
-        btn.disabled = true;
+
         fwAddMsg('fwProposalMessages', text, 'user', 'You');
-        fwProposalHistory.push({ role: 'user', content: text });
-        fwShowTyping('fwProposalMessages', 'fwProposalTyping');
-        try {
-            const res = await fetch('/api/chat', {
+        fwIntakeData[fwAnswerKeys[fwCurrentStep]] = text;
+        fwCurrentStep++;
+
+        if (fwCurrentStep < fwQuestions.length) {
+            fwUpdateProgress(fwCurrentStep + 1);
+            setTimeout(() => {
+                fwAddMsg('fwProposalMessages', fwQuestions[fwCurrentStep], 'bot', 'Guardian Advisor');
+                input.focus();
+            }, 300);
+        } else {
+            // All 6 answers collected — submit
+            fwProposalDone = true;
+            input.disabled = true;
+            btn.disabled = true;
+            input.placeholder = 'Proposal on its way…';
+            fwUpdateProgress(6);
+            fwAddMsg('fwProposalMessages', "Got it. Generating your proposal now — check your inbox shortly.", 'bot', 'Guardian Advisor');
+
+            fetch('/api/generate-proposal', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: fwProposalHistory })
-            });
-            const data = await res.json();
-            fwRemoveTyping('fwProposalTyping');
-            const reply = data.reply || "";
-            fwProposalHistory.push({ role: 'assistant', content: reply });
-            fwAddMsg('fwProposalMessages', reply, 'bot', 'Guardian Advisor');
-            if (data.intake_step != null) fwUpdateProgress(data.intake_step);
-            if (data.intake_complete) {
-                fwProposalDone = true;
-                input.disabled = true;
-                btn.disabled = true;
-                input.placeholder = 'Proposal on its way…';
-                fetch('/api/generate-proposal', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ intake_data: data.intake_data, conversation: fwProposalHistory })
-                }).catch(e => console.error('generate-proposal error:', e));
-            }
-        } catch (err) {
-            fwRemoveTyping('fwProposalTyping');
-            fwAddMsg('fwProposalMessages', "Something went wrong. Please try again.", 'bot', 'Guardian Advisor');
-        } finally {
-            if (!fwProposalDone) {
-                btn.disabled = false;
-                input.focus();
-            }
+                body: JSON.stringify({ intakeData: fwIntakeData })
+            }).catch(e => console.error('generate-proposal error:', e));
         }
     }
 </script>
