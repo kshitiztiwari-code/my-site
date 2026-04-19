@@ -204,12 +204,16 @@ HIGH: right institution (SCB, NBFC, credit bureau, RBI-regulated entity) + right
 MEDIUM: two of three HIGH conditions, or softer signals.
 LOW: student, researcher, non-BFSI, outside India, no specific challenge.
 
-## PROPOSAL STRUCTURE (4-5 sections)
-1. Understanding Your Challenge — reflect their specific situation, name the regulatory risk
-2. Recommended Approach — what Kshitiz would actually do for their problem
-3. Proposed Engagement — which service(s), scope, indicative timeline
-4. Investment — say engagements are scoped individually; "cost of engagement is a fraction of one regulatory finding"; direct to 30-min scoping call
-5. Next Steps — one clear action: reply to schedule a 30-minute scoping call
+## PROPOSAL STRUCTURE
+
+The "sections" array MUST contain exactly these 5 headings in this order:
+1. "Understanding Your Challenge"
+2. "Recommended Approach"
+3. "Proposed Engagement"
+4. "Investment"
+5. "Next Steps"
+
+Do not rename, merge, or skip any section. Write each body in Kshitiz's voice, specific to the visitor's situation.
 
 Return ONLY valid JSON. No markdown, no explanation, no preamble.`;
 
