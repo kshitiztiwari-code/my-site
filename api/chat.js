@@ -97,9 +97,9 @@ module.exports = async (req, res) => {
         }
 
         const data = await response.json();
-        const message = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!message) return res.status(502).json({ error: 'Empty response from API' });
-        res.json({ message });
+        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!reply) return res.status(502).json({ error: 'Empty response from API' });
+        res.json({ reply });
     } catch (e) {
         console.error(e);
         res.status(500).json({ error: 'Failed to reach AI service' });
