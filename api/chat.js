@@ -67,37 +67,37 @@ module.exports = async (req, res) => {
         return res.status(400).json({ error: 'messages array required' });
     }
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-        return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured' });
+        return res.status(500).json({ error: 'GEMINI_API_KEY not configured' });
     }
 
     try {
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://theguardians.in',
-                'X-Title': 'The Guardians'
-            },
-            body: JSON.stringify({
-                model: 'anthropic/claude-sonnet-4-5',
-                messages: [
-                    { role: 'system', content: SYSTEM_PROMPT },
-                    ...messages.slice(-10)
-                ]
-            })
-        });
+        const contents = messages.slice(-10).map(m => ({
+            role: m.role === 'user' ? 'user' : 'model',
+            parts: [{ text: m.content }]
+        }));
+
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents,
+                    systemInstruction: { role: 'system', parts: [{ text: SYSTEM_PROMPT }] }
+                })
+            }
+        );
 
         if (!response.ok) {
             const err = await response.text();
-            console.error('OpenRouter error:', err);
+            console.error('Gemini error:', err);
             return res.status(502).json({ error: 'Upstream API error' });
         }
 
         const data = await response.json();
-        const message = data.choices?.[0]?.message?.content;
+        const message = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!message) return res.status(502).json({ error: 'Empty response from API' });
         res.json({ message });
     } catch (e) {
