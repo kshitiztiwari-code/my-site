@@ -102,6 +102,7 @@ async function sendEmail({ to, subject, body, pdfBase64 }) {
 
   const payload = {
     from: 'Kshitiz Tiwari <onboarding@resend.dev>',
+    reply_to: 'epaibbl01.kshitizt@iima.ac.in',
     to,
     subject,
     text: body,
