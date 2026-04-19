@@ -467,7 +467,8 @@ module.exports = async function handler(req, res) {
 
   const { conversation, intakeData } = req.body;
   const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured' });
+  console.log('ENV CHECK — keys present:', Object.keys(process.env).filter(k => ['OPENROUTER_API_KEY','GEMINI_API_KEY','RESEND_API_KEY','TELEGRAM_BOT_TOKEN','SUPABASE_URL'].includes(k)));
+  if (!apiKey) return res.status(500).json({ error: 'OPENROUTER_API_KEY not configured', env_keys: Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('TOKEN') && !k.includes('KEY')).slice(0, 20) });
 
   if (!conversation && !intakeData) {
     return res.status(400).json({ error: 'conversation or intakeData required' });
